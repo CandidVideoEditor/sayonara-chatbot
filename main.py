@@ -1,340 +1,144 @@
 from pyrogram import Client, filters
-from pyrogram.types import *
+from pyrogram.types import Message
 from pymongo import MongoClient
-import requests
 import random
 import os
-import re
 import asyncio
-import time
-from datetime import datetime
-#from database.users_chats_db import db
+import datetime
 
-API_ID = "14050586"
+# ---------------- CONFIG ---------------- #
+
+API_ID = 14050586
 API_HASH = "42a60d9c657b106370c79bb0a8ac560c"
-BOT_TOKEN = os.environ.get("BOT_TOKEN", None) 
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 MONGO_URL = "mongodb+srv://vipboy:vipboy@vipboy.hfa8bzb.mongodb.net/?retryWrites=true&w=majority"
-DATABASE_NAME = os.environ.get("DATABASE_NAME") 
-BOT_USERNAME = os.environ.get("BOT_USERNAME")
-BOT_NAME = os.environ.get("BOT_NAME")
-ADMINS = os.environ.get("ADMINS")
+
+CREATOR_ID = 8432556224   # FULL ACCESS OWNER
 
 bot = Client(
-    "VickBot" ,
-    api_id = API_ID,
-    api_hash = API_HASH ,
-    bot_token = BOT_TOKEN
+    "AI_CHATBOT",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
 )
 
+db = MongoClient(MONGO_URL)
+chatdb = db["CHATBOT"]
+memory = chatdb["MEMORY"]
+settings = chatdb["SETTINGS"]
 
-async def is_admins(chat_id: int):
-    return [
-        member.user.id
-        async for member in bot.iter_chat_members(
-            chat_id, filter="administrators"
-        )
+# ---------------- UTILS ---------------- #
+
+def is_creator(user_id):
+    return user_id == CREATOR_ID
+
+
+def get_username(user):
+    if user.first_name:
+        return user.first_name
+    return "Buddy"
+
+
+def random_emoji():
+    return random.choice(["😄", "🔥", "😎", "🥰", "✨", "🤍", "😜"])
+
+
+def smart_reply(text):
+    """Multi-language casual AI style"""
+    replies = [
+        f"{text} 😄",
+        f"Arre wah! {text} 🔥",
+        f"Super da 😎 {text}",
+        f"Ayyo 😅 {text}",
+        f"Niceee 😍 {text}",
+        f"Cool bro 😎 {text}",
     ]
+    return random.choice(replies)
 
 
-EMOJIOS = [ 
-      "═══❰𝐖𝐄𝐋𝐂𝐎𝐌𝐄❱═══",
-]
-      
-START = f"""
-**๏ Hie Baby🐒 ๏**
-"""
+# ---------------- START COMMAND ---------------- #
 
-@bot.on_message(filters.command(["start", "aistart", f"start@{BOT_USERNAME}"]))
-async def restart(client, m: Message):
-    accha = await m.reply_text(
-                text = random.choice(EMOJIOS),
+@bot.on_message(filters.command("start"))
+async def start_cmd(client, message: Message):
+    name = get_username(message.from_user)
+    await message.reply_text(
+        f"👋 Hey {name}!\n\n"
+        "🤖 I'm your **Smart AI ChatBot**\n"
+        "I talk like humans 😎\n"
+        "I understand *English / Hinglish / Tanglish / Telugu mix*\n\n"
+        "💬 Just start chatting!\n"
+        "🎧 Voice | 😄 Stickers | 🔥 Trending talks supported\n"
     )
-    await asyncio.sleep(0.1)
-    await accha.edit("╔═❰ ʙᴏᴛ ᴍᴀᴅᴇ ʙʏ ❱═❍⊱❁۪۪")
-    await asyncio.sleep(0.1)
-    await accha.edit("╔═❰ ʙᴏᴛ ᴍᴀᴅᴇ ʙʏ ❱═❍⊱❁۪۪\n║\n║\n║\n║\n║\n║\n║")
-    await asyncio.sleep(0.1)
-    await accha.edit("╔═❰ ʙᴏᴛ ᴍᴀᴅᴇ ʙʏ ❱═❍⊱❁۪۪\n║\n║\n║\n║\n║\n║\n║\n╚═ஜʙᴏᴛ ᴍᴀᴅᴇ ʙʏஜ═❍⊱❁۪۪")
-    await asyncio.sleep(0.1)
-    await accha.edit("╔═❰ ʙᴏᴛ ᴍᴀᴅᴇ ʙʏ ❱═❍⊱❁۪۪\n║\n║➣\n║\n║➣\n║\n║➣\n║\n╚═ஜʙᴏᴛ ᴍᴀᴅᴇ ʙʏஜ═❍⊱❁۪۪")
-    await asyncio.sleep(0.2)
-    await accha.edit("╔═❰ ʙᴏᴛ ᴍᴀᴅᴇ ʙʏ ❱═❍⊱❁۪۪\n║\n║➣ @SayonaraXd\n║\n║➣\n║\n║➣\n║\n╚═ஜʙᴏᴛ ᴍᴀᴅᴇ ʙʏஜ═❍⊱❁۪۪")
-    await asyncio.sleep(0.2)
-    await accha.edit("╔═❰ ʙᴏᴛ ᴍᴀᴅᴇ ʙʏ ❱═❍⊱❁۪۪\n║\n║➣ @SayonaraXd\n║\n║➣ @Sayonaraxdbot\n║\n║➣\n║\n╚═ஜʙᴏᴛ ᴍᴀᴅᴇ ʙʏ𝐓ஜ═❍⊱❁۪۪")
-    await asyncio.sleep(0.2)
-    await accha.edit("╔═❰ ʙᴏᴛ ᴍᴀᴅᴇ ʙʏ❱═❍⊱❁۪۪\n║\n║➣ @SayonaraXd\n║\n║➣ @Sayonaraxdbot\n║\n║➣ @BTS_armysssss\n║\n╚═ஜʙᴏᴛ ᴍᴀᴅᴇ ʙʏஜ═❍⊱❁۪۪")
-     
-
-@bot.on_message(
-    filters.command(["chatbot off", f"chatbot@{BOT_USERNAME} off"], prefixes=["/", ".", "?", "-"])
-    & ~filters.private)
-async def chatbotofd(client, message):
-    vickdb = MongoClient(MONGO_URL)    
-    vick = vickdb["VickDb"]["Vick"]     
-    if message.from_user:
-        user = message.from_user.id
-        chat_id = message.chat.id
-        if user not in (
-           await is_admins(chat_id)
-        ):
-           return await message.reply_text(
-                "You are not admin"
-            )
-    is_vick = vick.find_one({"chat_id": message.chat.id})
-    if not is_vick:
-        vick.insert_one({"chat_id": message.chat.id})
-        await message.reply_text(f"Chatbot Disabled!")
-    if is_vick:
-        await message.reply_text(f"ChatBot Already Disabled")
-    
-
-@bot.on_message(
-    filters.command(["chatbot on", f"chatbot@{BOT_USERNAME} on"] ,prefixes=["/", ".", "?", "-"])
-    & ~filters.private)
-async def chatboton(client, message):
-    vickdb = MongoClient(MONGO_URL)    
-    vick = vickdb["VickDb"]["Vick"]     
-    if message.from_user:
-        user = message.from_user.id
-        chat_id = message.chat.id
-        if user not in (
-            await is_admins(chat_id)
-        ):
-            return await message.reply_text(
-                "You are not admin"
-            )
-    is_vick = vick.find_one({"chat_id": message.chat.id})
-    if not is_vick:           
-        await message.reply_text(f"Chatbot Already Enabled")
-    if is_vick:
-        vick.delete_one({"chat_id": message.chat.id})
-        await message.reply_text(f"ChatBot Enabled!")
-    
-
-@bot.on_message(
-    filters.command(["chatbot", f"chatbot@{BOT_USERNAME}"], prefixes=["/", ".", "?", "-"])
-    & ~filters.private)
-async def chatbot(client, message):
-    await message.reply_text(f"**ᴜsᴀɢᴇ:**\n/**chatbot [on/off]**\n**ᴄʜᴀᴛ-ʙᴏᴛ ᴄᴏᴍᴍᴀɴᴅ(s) ᴡᴏʀᴋ ɪɴ ɢʀᴏᴜᴘ ᴏɴʟʏ!**")
 
 
-@bot.on_message(
- (
-        filters.text
-        | filters.sticker
+# ---------------- MAIN CHAT LOGIC ---------------- #
+
+@bot.on_message(filters.text & ~filters.bot)
+async def chat_handler(client, message: Message):
+
+    user = message.from_user
+    text = message.text.lower()
+
+    # Save chat
+    memory.insert_one({
+        "user": user.id,
+        "text": text,
+        "time": datetime.datetime.now()
+    })
+
+    # Greeting detection
+    if any(x in text for x in ["hi", "hello", "hey", "yo"]):
+        return await message.reply_text(
+            f"Hey {user.first_name} 😄 How are you da?"
+        )
+
+    # Mood replies
+    if "sad" in text or "depressed" in text:
+        return await message.reply_text(
+            "Ayyo 😔 Don't worry ra… I'm here for you ❤️"
+        )
+
+    if "love" in text:
+        return await message.reply_text(
+            "Awww ❤️ Love is in the air 😌"
+        )
+
+    if "who are you" in text:
+        return await message.reply_text(
+            "I'm your friendly AI buddy 🤖✨"
+        )
+
+    # Trending talk mock
+    if "news" in text or "trending" in text:
+        return await message.reply_text(
+            "🔥 Trending now:\n• AI taking over 😎\n• Movies rocking 🎬\n• India winning everywhere 🇮🇳"
+        )
+
+    # Default AI talk
+    await message.reply_text(
+        smart_reply(text)
     )
-    & ~filters.private
-    & ~filters.bot,
-)
-async def vickai(client: Client, message: Message):
-
-   chatdb = MongoClient(MONGO_URL)
-   chatai = chatdb["Word"]["WordDb"]   
-
-   if not message.reply_to_message:
-       vickdb = MongoClient(MONGO_URL)
-       vick = vickdb["VickDb"]["Vick"] 
-       is_vick = vick.find_one({"chat_id": message.chat.id})
-       if not is_vick:
-           await bot.send_chat_action(message.chat.id, "typing")
-           K = []  
-           is_chat = chatai.find({"word": message.text})  
-           k = chatai.find_one({"word": message.text})      
-           if k:               
-               for x in is_chat:
-                   K.append(x['text'])          
-               hey = random.choice(K)
-               is_text = chatai.find_one({"text": hey})
-               Yo = is_text['check']
-               if Yo == "sticker":
-                   await message.reply_sticker(f"{hey}")
-               if not Yo == "sticker":
-                   await message.reply_text(f"{hey}")
-   
-   if message.reply_to_message:  
-       vickdb = MongoClient(MONGO_URL)
-       vick = vickdb["VickDb"]["Vick"] 
-       is_vick = vick.find_one({"chat_id": message.chat.id})    
-       getme = await bot.get_me()
-       bot_id = getme.id                             
-       if message.reply_to_message.from_user.id == bot_id: 
-           if not is_vick:                   
-               await bot.send_chat_action(message.chat.id, "typing")
-               K = []  
-               is_chat = chatai.find({"word": message.text})
-               k = chatai.find_one({"word": message.text})      
-               if k:       
-                   for x in is_chat:
-                       K.append(x['text'])
-                   hey = random.choice(K)
-                   is_text = chatai.find_one({"text": hey})
-                   Yo = is_text['check']
-                   if Yo == "sticker":
-                       await message.reply_sticker(f"{hey}")
-                   if not Yo == "sticker":
-                       await message.reply_text(f"{hey}")
-       if not message.reply_to_message.from_user.id == bot_id:          
-           if message.sticker:
-               is_chat = chatai.find_one({"word": message.reply_to_message.text, "id": message.sticker.file_unique_id})
-               if not is_chat:
-                   chatai.insert_one({"word": message.reply_to_message.text, "text": message.sticker.file_id, "check": "sticker", "id": message.sticker.file_unique_id})
-           if message.text:                 
-               is_chat = chatai.find_one({"word": message.reply_to_message.text, "text": message.text})                 
-               if not is_chat:
-                   chatai.insert_one({"word": message.reply_to_message.text, "text": message.text, "check": "none"})    
-               
-
-@bot.on_message(
- (
-        filters.sticker
-        | filters.text
-    )
-    & ~filters.private
-    & ~filters.bot,
-)
-async def vickstickerai(client: Client, message: Message):
-
-   chatdb = MongoClient(MONGO_URL)
-   chatai = chatdb["Word"]["WordDb"]   
-
-   if not message.reply_to_message:
-       vickdb = MongoClient(MONGO_URL)
-       vick = vickdb["VickDb"]["Vick"] 
-       is_vick = vick.find_one({"chat_id": message.chat.id})
-       if not is_vick:
-           await bot.send_chat_action(message.chat.id, "typing")
-           K = []  
-           is_chat = chatai.find({"word": message.sticker.file_unique_id})      
-           k = chatai.find_one({"word": message.text})      
-           if k:           
-               for x in is_chat:
-                   K.append(x['text'])
-               hey = random.choice(K)
-               is_text = chatai.find_one({"text": hey})
-               Yo = is_text['check']
-               if Yo == "text":
-                   await message.reply_text(f"{hey}")
-               if not Yo == "text":
-                   await message.reply_sticker(f"{hey}")
-   
-   if message.reply_to_message:
-       vickdb = MongoClient(MONGO_URL)
-       vick = vickdb["VickDb"]["Vick"] 
-       is_vick = vick.find_one({"chat_id": message.chat.id})
-       getme = await bot.get_me()
-       bot_id = getme.id
-       if message.reply_to_message.from_user.id == bot_id: 
-           if not is_vick:                    
-               await bot.send_chat_action(message.chat.id, "typing")
-               K = []  
-               is_chat = chatai.find({"word": message.text})
-               k = chatai.find_one({"word": message.text})      
-               if k:           
-                   for x in is_chat:
-                       K.append(x['text'])
-                   hey = random.choice(K)
-                   is_text = chatai.find_one({"text": hey})
-                   Yo = is_text['check']
-                   if Yo == "text":
-                       await message.reply_text(f"{hey}")
-                   if not Yo == "text":
-                       await message.reply_sticker(f"{hey}")
-       if not message.reply_to_message.from_user.id == bot_id:          
-           if message.text:
-               is_chat = chatai.find_one({"word": message.reply_to_message.sticker.file_unique_id, "text": message.text})
-               if not is_chat:
-                   toggle.insert_one({"word": message.reply_to_message.sticker.file_unique_id, "text": message.text, "check": "text"})
-           if message.sticker:                 
-               is_chat = chatai.find_one({"word": message.reply_to_message.sticker.file_unique_id, "text": message.sticker.file_id})                 
-               if not is_chat:
-                   chatai.insert_one({"word": message.reply_to_message.sticker.file_unique_id, "text": message.sticker.file_id, "check": "none"})    
-               
 
 
-@bot.on_message(
-    (
-        filters.text
-        | filters.sticker
-    )
-    & filters.private
-    & ~filters.bot,
-)
-async def vickprivate(client: Client, message: Message):
+# ---------------- STICKER REPLY ---------------- #
 
-   chatdb = MongoClient(MONGO_URL)
-   chatai = chatdb["Word"]["WordDb"]
-   if not message.reply_to_message: 
-       await bot.send_chat_action(message.chat.id, "typing")
-       K = []  
-       is_chat = chatai.find({"word": message.text})                 
-       for x in is_chat:
-           K.append(x['text'])
-       hey = random.choice(K)
-       is_text = chatai.find_one({"text": hey})
-       Yo = is_text['check']
-       if Yo == "sticker":
-           await message.reply_sticker(f"{hey}")
-       if not Yo == "sticker":
-           await message.reply_text(f"{hey}")
-   if message.reply_to_message:            
-       getme = await bot.get_me()
-       bot_id = getme.id       
-       if message.reply_to_message.from_user.id == bot_id:                    
-           await bot.send_chat_action(message.chat.id, "typing")
-           K = []  
-           is_chat = chatai.find({"word": message.text})                 
-           for x in is_chat:
-               K.append(x['text'])
-           hey = random.choice(K)
-           is_text = chatai.find_one({"text": hey})
-           Yo = is_text['check']
-           if Yo == "sticker":
-               await message.reply_sticker(f"{hey}")
-           if not Yo == "sticker":
-               await message.reply_text(f"{hey}")
-       
+@bot.on_message(filters.sticker)
+async def sticker_reply(client, message: Message):
+    await message.reply_sticker(message.sticker.file_id)
 
-@bot.on_message(
- (
-        filters.sticker
-        | filters.text
-    )
-    & filters.private
-    & ~filters.bot,
-)
-async def vickprivatesticker(client: Client, message: Message):
 
-   chatdb = MongoClient(MONGO_URL)
-   chatai = chatdb["Word"]["WordDb"] 
-   if not message.reply_to_message:
-       await bot.send_chat_action(message.chat.id, "typing")
-       K = []  
-       is_chat = chatai.find({"word": message.sticker.file_unique_id})                 
-       for x in is_chat:
-           K.append(x['text'])
-       hey = random.choice(K)
-       is_text = chatai.find_one({"text": hey})
-       Yo = is_text['check']
-       if Yo == "text":
-           await message.reply_text(f"{hey}")
-       if not Yo == "text":
-           await message.reply_sticker(f"{hey}")
-   if message.reply_to_message:            
-       getme = await bot.get_me()
-       bot_id = getme.id       
-       if message.reply_to_message.from_user.id == bot_id:                    
-           await bot.send_chat_action(message.chat.id, "typing")
-           K = []  
-           is_chat = chatai.find({"word": message.sticker.file_unique_id})                 
-           for x in is_chat:
-               K.append(x['text'])
-           hey = random.choice(K)
-           is_text = chatai.find_one({"text": hey})
-           Yo = is_text['check']
-           if Yo == "text":
-               await message.reply_text(f"{hey}")
-           if not Yo == "text":
-               await message.reply_sticker(f"{hey}")
+# ---------------- CREATOR COMMAND ---------------- #
 
-print(f"🎄TEAM AGORA BOT IS READY🎄 ")      
+@bot.on_message(filters.command("creator"))
+async def creator_info(client, message: Message):
+    if message.from_user.id == CREATOR_ID:
+        await message.reply_text("👑 You are the CREATOR of this bot.")
+    else:
+        await message.reply_text("⚠️ Only creator can access this.")
+
+
+# ---------------- RUN ---------------- #
+
+print("🤖 AI CHATBOT IS RUNNING...")
 bot.run()
